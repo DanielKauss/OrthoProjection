@@ -4,19 +4,15 @@ let vadd = p5.Vector.add
 let vsub = p5.Vector.sub
 let vmult = p5.Vector.mult
 
-
-
 let bgColor = 160
 let bgEditorColor = 132
 let axisPlaneColor = 150
 let axisPlaneAlpha = 150
 
-let lineSec = new jsts.algorithm.RobustLineIntersector()
 let sv;
+let gl;
 let camSv;
 let sensitivityX = 0.001
-let sensitivityY = 0.001
-let scaleFactor = 1
 
 const editModes = {
 	Move: 1,
@@ -38,23 +34,50 @@ function setup() {
 	panelWidth = width / 2
 
 	sv = createGraphics(panelWidth, height, WEBGL)
+	gl = sv._renderer.GL
+	// gl.disable(gl.DEPTH_TEST)
 	camSv = sv.createCamera()
 	camSv.ortho(-panelWidth / 2, panelWidth / 2, height / 2, -height / 2, -10000, 10000);
 	camSv.move(0, 150, 0)
 	camSv.lookAt(0, 0, 0)
 }
 
+// draw from front to back
 function drawPlanes() {
+	sv.ambientMaterial(axisPlaneColor, axisPlaneAlpha)
 	sv.push()
-	sv.ambientMaterial(axisPlaneColor, axisPlaneAlpha)
-	sv.plane(600)
 	sv.rotateX(radians(90))
-	sv.ambientMaterial(axisPlaneColor, axisPlaneAlpha)
-	sv.plane(600)
+	sv.translate(0, -150, 0)
+	sv.plane(600, 300)
 	sv.pop()
+
+	sv.push()
+	sv.translate(0, -150, 0)
+	sv.plane(600, 300)
+	sv.pop()
+	
+	sv.push()
+	sv.translate(0, 150, 0)
+	sv.plane(600, 300)
+	sv.pop()
+	sv.push()
+
+	sv.rotateX(radians(90))
+	sv.translate(0, 150, 0)
+	sv.plane(600, 300)
+	sv.pop()
+
+	sv.push()
+	sv.stroke(0)
+	sv.strokeWeight(4)
+	sv.line(-300, 0, 0, 300, 0, 0)
+	sv.pop()
+
 }
 
 function draw() {
+	geometries.sort(function(a, b) {return a.drawOrder - b.drawOrder})
+
 	background(150);
 
 	// 3d graphics
@@ -70,14 +93,14 @@ function draw() {
 
 
 	for (let i = 0; i < geometries.length; i++) {
-		geometries[i].draw3d()
+		geometries[i].intersections(0)
 	}
 	for (let i = 0; i < geometries.length; i++) {
-		geometries[i].intersections(0)
 		geometries[i].draw3d()
 	}
 
 	drawPlanes()
+	
 	sv.pop()
 
 
@@ -86,9 +109,6 @@ function draw() {
 	translate(width / 4, height / 2);
 	fill(bgEditorColor);
 	rect(-panelWidth / 2, -height / 2, panelWidth, height);
-	for (let i = 0; i < geometries.length; i++) {
-		geometries[i].draw2d()
-	}
 	for (let i = 0; i < geometries.length; i++) {
 		geometries[i].draw2d()
 	}
@@ -120,6 +140,17 @@ function editorMousePress() {
 		}
 	}
 
+	if (mouseButton === RIGHT) {
+		console.log(selected)
+		if (selected.length > 0) {
+			console.log("trying to delete" + geometries.indexOf(selected[selected.length-1]))
+			geometries.splice(geometries.indexOf(selected[selected.length-1]), 1)
+			selected[selected.length-1].active = false
+		}
+		selected = []
+		return
+	}
+
 	if (currentMode === editModes.Point) {
 		geometries.push(new Point(mousePos))
 		selected = []
@@ -131,7 +162,7 @@ function editorMousePress() {
 		geometries.push(new Line(p1, p2))
 		selected = []
 	}
-	
+
 	if (currentMode === editModes.Plane && selected.length > 2) {
 		let p1 = selected[selected.length - 1]
 		let p2 = selected[selected.length - 2]
@@ -164,9 +195,8 @@ function editorMouseDrag() {
 }
 
 function spaceMouseDrag() {
-	const deltaTheta = (-sensitivityX * (mouseX - pmouseX)) / scaleFactor;
-	const deltaPhi = 0//(sensitivityY * (mouseY - pmouseY)) / scaleFactor;
-	camSv._orbit(deltaTheta, deltaPhi, 0);
+	const deltaTheta = (-sensitivityX * (mouseX - pmouseX));
+	camSv._orbit(deltaTheta, 0, 0);
 }
 
 function mousePressed() {
@@ -174,7 +204,6 @@ function mousePressed() {
 		editorMousePress()
 	} else {
 		selected = []
-		console.log("spcae press")
 	}
 }
 

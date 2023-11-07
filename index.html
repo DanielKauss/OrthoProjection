@@ -3,9 +3,8 @@
 
 <head>
 	<meta charset="UTF-8">
-	<title>p5.js Starter</title>
+	<title>Orthogonal Projection Visualizer</title>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
-	<script src="https://unpkg.com/jsts@1.6.1/dist/jsts.min.js"></script>
 	<script src="main.js"></script>
 	<script src="geometry.js"></script>
 	<script src="objData.js"></script>
@@ -17,7 +16,14 @@
 	</style>
 </head>
 
-<body>
+<body oncontextmenu="return false">
+	<a style="position: absolute; pointer-events: none;">
+		Move: m</br>
+		Point: p</br>
+		Line: l</br>
+		Plane: k</br>
+		Delete: Right-Mouse
+	</a>
 </body>
 
 </html>

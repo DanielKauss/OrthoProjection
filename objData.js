@@ -1,11 +1,9 @@
-
-
 function infLine(_p1, _p2) {
 	// let u = normalize(sub(_p1, _p2))
 	let u = p5.Vector.sub(_p1, _p2).normalize()
 	let p1 = p5.Vector.add(_p1, p5.Vector.mult(u, 1e5))
 	let p2 = p5.Vector.add(_p2, p5.Vector.mult(u, -1e5))
-	
+
 	line(p1.x, p1.y, p2.x, p2.y)
 	line(p1.x, p1.z, p2.x, p2.z)
 }
@@ -14,7 +12,7 @@ function infLine3(_p1, _p2) {
 	let u = p5.Vector.sub(_p1, _p2).normalize()
 	let p1 = p5.Vector.add(_p1, p5.Vector.mult(u, 1e5))
 	let p2 = p5.Vector.add(_p2, p5.Vector.mult(u, -1e5))
-	
+
 	sv.line(p1.x, p1.y, p1.z, p2.x, p2.y, p2.z)
 }
 
@@ -22,7 +20,7 @@ function lineTraces(_p1, _p2) {
 	let u = p5.Vector.sub(_p1, _p2).normalize()
 	let p1 = p5.Vector.add(_p1, p5.Vector.mult(u, 1e5))
 	let p2 = p5.Vector.add(_p2, p5.Vector.mult(u, -1e5))
-	
+
 	sv.push()
 	sv.stroke(244, 110, 0)
 	sv.line(p1.x, 0, p1.z, p2.x, 0, p2.z)
@@ -32,10 +30,12 @@ function lineTraces(_p1, _p2) {
 }
 
 class Point {
+	active = true
+	drawOrder = 0
 	constructor(_pos) {
 		this.pos = _pos;
 	}
-	
+
 	draw2d() {
 		push()
 		stroke(0)
@@ -62,7 +62,7 @@ class Point {
 		sv.pop()
 	}
 
-	intersections(objects) {}
+	intersections(objects) { }
 
 	distance(p) {
 		let distA1 = dist(p.x, p.y, this.pos.x, this.pos.y)
@@ -75,6 +75,7 @@ class Point {
 
 
 class Line {
+	drawOrder = 1
 	constructor(_p1, _p2) {
 		this.p1 = _p1
 		this.p2 = _p2
@@ -105,14 +106,14 @@ class Line {
 		sv.strokeWeight(2)
 		infLine3(this.p1.pos, this.p2.pos)
 		lineTraces(this.p1.pos, this.p2.pos)
-		
+
 		sv.noStroke()
 		sv.push()
 		sv.translate(this.h)
 		sv.fill(244, 110, 0)
 		sv.sphere(5)
 		sv.pop()
-		
+
 		sv.push()
 		sv.translate(this.v)
 		sv.fill(0, 110, 244)
@@ -123,6 +124,12 @@ class Line {
 	}
 
 	intersections(objects) {
+		if (this.p1.active == false || this.p2.active == false) {
+			let selfIndex = geometries.indexOf(this)
+			if (selfIndex != -1) {
+				geometries.splice(geometries.indexOf(this), 1)
+			}
+		}
 		this.h = linePlaneInt(this.p1.pos, this.p2.pos, createVector(0, 0, 0), createVector(0, 1, 0))
 		this.v = linePlaneInt(this.p1.pos, this.p2.pos, createVector(0, 0, 0), createVector(0, 0, 1))
 	}
@@ -130,6 +137,7 @@ class Line {
 
 
 class Plane {
+	drawOrder = 2
 	constructor(_p1, _p2, _p3) {
 		this.p1 = _p1
 		this.p2 = _p2
@@ -140,8 +148,6 @@ class Plane {
 
 		this.l1 = new Line(_p1, _p2)
 		this.l2 = new Line(_p2, _p3)
-
-		console.log("creating noew plane")
 	}
 
 	draw2d() {
@@ -150,25 +156,28 @@ class Plane {
 		infLine(this.l1.h, this.l2.h)
 		stroke(110, 0, 220)
 		infLine(this.l1.v, this.l2.v)
+		stroke(50, 150)
+		infLine(this.p1.pos, this.p2.pos)
+		infLine(this.p2.pos, this.p3.pos)
 		pop()
 
 	}
 	draw3d() {
 		sv.push()
-		
+
 		sv.push()
-		console.log(this.l1.h + this.l2.h)
 		sv.stroke(220, 0, 110)
+		sv.strokeWeight(2)
 		infLine3(this.l1.h, this.l2.h)
 		sv.stroke(110, 0, 220)
 		infLine3(this.l1.v, this.l2.v)
 		sv.pop()
 
 		let yRot = Math.atan2(this.pd.x, this.pd.z)
-		let r = Math.sqrt(this.pd.x*this.pd.x + this.pd.z*this.pd.z)
+		let r = Math.sqrt(this.pd.x * this.pd.x + this.pd.z * this.pd.z)
 		let xRot = Math.atan2(r, this.pd.y) + Math.PI / 2
 
-		// sv.translate(this.p1.pos)
+		sv.translate(this.p1.pos)
 		sv.rotateY(yRot)
 		sv.rotateX(xRot)
 		sv.fill(0, 0, 150, 150)
@@ -178,6 +187,12 @@ class Plane {
 
 	}
 	intersections() {
+		if (this.p1.active == false || this.p2.active == false || this.p3.active == false) {
+			let selfIndex = geometries.indexOf(this)
+			if (selfIndex != -1) {
+				geometries.splice(geometries.indexOf(this), 1)
+			}
+		}
 		this.pd = vcross(vsub(this.p2.pos, this.p1.pos), vsub(this.p3.pos, this.p1.pos))
 		this.pd.normalize()
 		this.l1.intersections(0)
