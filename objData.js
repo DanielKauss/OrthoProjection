@@ -148,6 +148,8 @@ class Plane {
 
 		this.l1 = new Line(_p1, _p2)
 		this.l2 = new Line(_p2, _p3)
+
+		this.shade = Math.random() * 140
 	}
 
 	draw2d() {
@@ -180,7 +182,7 @@ class Plane {
 		sv.translate(this.p1.pos)
 		sv.rotateY(yRot)
 		sv.rotateX(xRot)
-		sv.fill(0, 0, 150, 150)
+		sv.fill(0, 0, 110 + this.shade, 150)
 		sv.plane(700)
 
 		sv.pop()

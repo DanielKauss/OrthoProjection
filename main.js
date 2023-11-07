@@ -6,7 +6,7 @@ let vmult = p5.Vector.mult
 
 let bgColor = 160
 let bgEditorColor = 132
-let axisPlaneColor = 150
+let axisPlaneColor = 40
 let axisPlaneAlpha = 150
 
 let sv;
@@ -44,24 +44,27 @@ function setup() {
 
 // draw from front to back
 function drawPlanes() {
-	sv.ambientMaterial(axisPlaneColor, axisPlaneAlpha)
 	sv.push()
+	sv.fill(axisPlaneColor, axisPlaneAlpha - 20)
 	sv.rotateX(radians(90))
 	sv.translate(0, -150, 0)
 	sv.plane(600, 300)
 	sv.pop()
 
 	sv.push()
+	sv.fill(axisPlaneColor, axisPlaneAlpha)
 	sv.translate(0, -150, 0)
 	sv.plane(600, 300)
 	sv.pop()
 	
 	sv.push()
+	sv.fill(axisPlaneColor, axisPlaneAlpha)
 	sv.translate(0, 150, 0)
 	sv.plane(600, 300)
 	sv.pop()
-	sv.push()
 
+	sv.push()
+	sv.fill(axisPlaneColor, axisPlaneAlpha - 20)
 	sv.rotateX(radians(90))
 	sv.translate(0, 150, 0)
 	sv.plane(600, 300)
