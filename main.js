@@ -1,3 +1,11 @@
+let vdot = p5.Vector.dot
+let vcross = p5.Vector.cross
+let vadd = p5.Vector.add
+let vsub = p5.Vector.sub
+let vmult = p5.Vector.mult
+
+
+
 let bgColor = 160
 let bgEditorColor = 132
 let axisPlaneColor = 150
@@ -6,14 +14,15 @@ let axisPlaneAlpha = 150
 let lineSec = new jsts.algorithm.RobustLineIntersector()
 let sv;
 let camSv;
-let sensitivityX = 0.05
-let sensitivityY = 0.05
+let sensitivityX = 0.001
+let sensitivityY = 0.001
 let scaleFactor = 1
 
 const editModes = {
 	Move: 1,
 	Point: 2,
-	Line: 3
+	Line: 3,
+	Plane: 4
 }
 let currentMode = editModes.Move;
 let selected = []
@@ -22,9 +31,7 @@ let selectedA1 = true
 let currCamera;
 let panelWidth = 0
 
-let points = []
-let lines = []
-let planes = []
+let geometries = []
 
 function setup() {
 	createCanvas(windowWidth, windowHeight);
@@ -42,6 +49,7 @@ function drawPlanes() {
 	sv.ambientMaterial(axisPlaneColor, axisPlaneAlpha)
 	sv.plane(600)
 	sv.rotateX(radians(90))
+	sv.ambientMaterial(axisPlaneColor, axisPlaneAlpha)
 	sv.plane(600)
 	sv.pop()
 }
@@ -51,7 +59,7 @@ function draw() {
 
 	// 3d graphics
 	sv.clear()
-	sv.orbitControl()
+	sv.blendMode(ADD)
 	sv.background(bgColor)
 	sv.push()
 	sv.rotateY(radians(45))
@@ -61,11 +69,12 @@ function draw() {
 	sv.noStroke()
 
 
-	for (let i = 0; i < points.length; i++) {
-		points[i].draw3d()
+	for (let i = 0; i < geometries.length; i++) {
+		geometries[i].draw3d()
 	}
-	for (let i = 0; i < lines.length; i++) {
-		lines[i].draw3d()
+	for (let i = 0; i < geometries.length; i++) {
+		geometries[i].intersections(0)
+		geometries[i].draw3d()
 	}
 
 	drawPlanes()
@@ -75,22 +84,20 @@ function draw() {
 	// 2d graphics
 	push()
 	translate(width / 4, height / 2);
-	// scale(1, -1)
-	stroke(0)
-
 	fill(bgEditorColor);
 	rect(-panelWidth / 2, -height / 2, panelWidth, height);
-	fill(0, 0, 0);
+	for (let i = 0; i < geometries.length; i++) {
+		geometries[i].draw2d()
+	}
+	for (let i = 0; i < geometries.length; i++) {
+		geometries[i].draw2d()
+	}
+	stroke(0)
+	strokeWeight(2)
 	line(-panelWidth / 2, 0, panelWidth / 2, 0);
-	for (let i = 0; i < points.length; i++) {
-		points[i].draw2d()
-	}
-	for (let i = 0; i < lines.length; i++) {
-		lines[i].draw2d()
-	}
 	pop()
 
-	// display space on top
+	// geometriesy space on top
 	fill(bgColor)
 	rect(panelWidth, 0, panelWidth, height)
 	image(sv, panelWidth, 0)
@@ -100,26 +107,38 @@ function editorMousePress() {
 	let mX = mouseX - panelWidth / 2
 	let mY = mouseY - height / 2
 	let mousePos = createVector(mX, mY, -mY)
-	for (let i = 0; i < points.length; i++) {
-		let dist = points[i].distance(mousePos)
+	for (let i = 0; i < geometries.length; i++) {
+		if (!(geometries[i] instanceof Point)) { continue; }
+		let dist = geometries[i].distance(mousePos)
 		if (dist.x < 10) {
-			selected.push(points[i])
+			selected.push(geometries[i])
 			selectedA1 = true
 		}
 		if (dist.y < 10) {
-			selected.push(points[i])
+			selected.push(geometries[i])
 			selectedA1 = false
 		}
 	}
 
 	if (currentMode === editModes.Point) {
-		points.push(new Point(mousePos))
+		geometries.push(new Point(mousePos))
+		selected = []
 	}
 
 	if (currentMode === editModes.Line && selected.length > 1) {
 		let p1 = selected[selected.length - 1]
 		let p2 = selected[selected.length - 2]
-		lines.push(new Line(p1, p2))
+		geometries.push(new Line(p1, p2))
+		selected = []
+	}
+	
+	if (currentMode === editModes.Plane && selected.length > 2) {
+		let p1 = selected[selected.length - 1]
+		let p2 = selected[selected.length - 2]
+		let p3 = selected[selected.length - 3]
+		geometries.push(new Plane(p1, p2, p3))
+		selected = []
+
 	}
 
 }
@@ -154,6 +173,7 @@ function mousePressed() {
 	if (mouseX < panelWidth) {
 		editorMousePress()
 	} else {
+		selected = []
 		console.log("spcae press")
 	}
 }
@@ -162,6 +182,7 @@ function mouseDragged() {
 	if (mouseX < panelWidth) {
 		editorMouseDrag()
 	} else {
+		selected = []
 		spaceMouseDrag()
 	}
 }
@@ -176,6 +197,10 @@ function keyPressed() {
 	if (key === "l") {
 		currentMode = editModes.Line
 	}
+	if (key === "k") {
+		currentMode = editModes.Plane
+	}
+
 	selected = []
 }
 
