@@ -10,6 +10,27 @@ function infLine(_p1, _p2) {
 	line(p1.x, p1.z, p2.x, p2.z)
 }
 
+function infLine3(_p1, _p2) {
+	let u = p5.Vector.sub(_p1, _p2).normalize()
+	let p1 = p5.Vector.add(_p1, p5.Vector.mult(u, 1e3))
+	let p2 = p5.Vector.add(_p2, p5.Vector.mult(u, -1e3))
+	
+	sv.line(p1.x, p1.y, p1.z, p2.x, p2.y, p2.z)
+}
+
+function lineTraces(_p1, _p2) {
+	let u = p5.Vector.sub(_p1, _p2).normalize()
+	let p1 = p5.Vector.add(_p1, p5.Vector.mult(u, 1e3))
+	let p2 = p5.Vector.add(_p2, p5.Vector.mult(u, -1e3))
+	
+	sv.push()
+	sv.stroke(244, 110, 0)
+	sv.line(p1.x, 0, p1.z, p2.x, 0, p2.z)
+	sv.stroke(0, 110, 244)
+	sv.line(p1.x, p1.y, 0, p2.x, p2.y, 0)
+	sv.pop()
+}
+
 class Point {
 	constructor(_pos) {
 		this.pos = _pos;
@@ -28,14 +49,14 @@ class Point {
 	}
 
 	draw3d() {
-		push()
-		fill(0)
-		stroke(0)
-		line(this.pos.x, this.pos.y, 0, this.pos.x, this.pos.y, this.pos.z)
-		line(this.pos.x, 0, this.pos.z, this.pos.x, this.pos.y, this.pos.z)
-		translate(this.pos)
-		sphere(5);
-		pop()
+		sv.push()
+		sv.fill(0)
+		sv.stroke(0)
+		sv.line(this.pos.x, this.pos.y, 0, this.pos.x, this.pos.y, this.pos.z)
+		sv.line(this.pos.x, 0, this.pos.z, this.pos.x, this.pos.y, this.pos.z)
+		sv.translate(this.pos)
+		sv.sphere(5);
+		sv.pop()
 	}
 
 	distance(p) {
@@ -55,10 +76,19 @@ class Line {
 	}
 
 	draw2d() {
+		push()
 		fill(0)
 		infLine(this.p1.pos, this.p2.pos)
+		pop()
 	}
 
-	draw3d() {}
+	draw3d() {
+		sv.push()
+		sv.stroke(0)
+		infLine3(this.p1.pos, this.p2.pos)
+		lineTraces(this.p1.pos, this.p2.pos)
+
+		sv.pop()
+	}
 
 }

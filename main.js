@@ -4,7 +4,11 @@ let axisPlaneColor = 150
 let axisPlaneAlpha = 150
 
 let lineSec = new jsts.algorithm.RobustLineIntersector()
-let projRender;
+let sv;
+let camSv;
+let sensitivityX = 0.05
+let sensitivityY = 0.05
+let scaleFactor = 1
 
 const editModes = {
 	Move: 1,
@@ -23,43 +27,55 @@ let lines = []
 let planes = []
 
 function setup() {
-	createCanvas(windowWidth, windowHeight, WEBGL);
-	currCamera = createCamera();
-	currCamera.ortho()
+	createCanvas(windowWidth, windowHeight);
 	panelWidth = width / 2
+
+	sv = createGraphics(panelWidth, height, WEBGL)
+	camSv = sv.createCamera()
+	camSv.ortho(-panelWidth / 2, panelWidth / 2, height / 2, -height / 2, -10000, 10000);
+	camSv.move(0, 150, 0)
+	camSv.lookAt(0, 0, 0)
 }
 
 function drawPlanes() {
-	push()
-	ambientMaterial(axisPlaneColor, axisPlaneAlpha)
-	plane(600)
-	rotateX(radians(90))
-	plane(600)
-	pop()
+	sv.push()
+	sv.ambientMaterial(axisPlaneColor, axisPlaneAlpha)
+	sv.plane(600)
+	sv.rotateX(radians(90))
+	sv.plane(600)
+	sv.pop()
 }
 
 function draw() {
 	background(150);
 
 	// 3d graphics
-	push()
-	translate(width / 4, 0)
-	rotateY(radians(45))
-	rotateX(radians(-10))
-	rotateZ(radians(-10))
-	noStroke()
+	sv.clear()
+	sv.orbitControl()
+	sv.background(bgColor)
+	sv.push()
+	sv.rotateY(radians(45))
+	sv.scale(1, -1, 1)
+	// sv.rotateX(radians(-10))
+	// sv.rotateZ(radians(-10))
+	sv.noStroke()
 
 
 	for (let i = 0; i < points.length; i++) {
 		points[i].draw3d()
 	}
+	for (let i = 0; i < lines.length; i++) {
+		lines[i].draw3d()
+	}
 
 	drawPlanes()
-	pop()
+	sv.pop()
+
 
 	// 2d graphics
 	push()
-	translate(-width / 4, 0);
+	translate(width / 4, height / 2);
+	// scale(1, -1)
 	stroke(0)
 
 	fill(bgEditorColor);
@@ -74,10 +90,13 @@ function draw() {
 	}
 	pop()
 
+	// display space on top
+	fill(bgColor)
+	rect(panelWidth, 0, panelWidth, height)
+	image(sv, panelWidth, 0)
 }
 
-
-function mousePressed() {
+function editorMousePress() {
 	let mX = mouseX - panelWidth / 2
 	let mY = mouseY - height / 2
 	let mousePos = createVector(mX, mY, -mY)
@@ -102,9 +121,10 @@ function mousePressed() {
 		let p2 = selected[selected.length - 2]
 		lines.push(new Line(p1, p2))
 	}
+
 }
 
-function mouseDragged() {
+function editorMouseDrag() {
 	// console.log(selected)
 	let mX = mouseX - panelWidth / 2
 	let mY = mouseY - height / 2
@@ -121,6 +141,29 @@ function mouseDragged() {
 		}
 	}
 
+
+}
+
+function spaceMouseDrag() {
+	const deltaTheta = (-sensitivityX * (mouseX - pmouseX)) / scaleFactor;
+	const deltaPhi = 0//(sensitivityY * (mouseY - pmouseY)) / scaleFactor;
+	camSv._orbit(deltaTheta, deltaPhi, 0);
+}
+
+function mousePressed() {
+	if (mouseX < panelWidth) {
+		editorMousePress()
+	} else {
+		console.log("spcae press")
+	}
+}
+
+function mouseDragged() {
+	if (mouseX < panelWidth) {
+		editorMouseDrag()
+	} else {
+		spaceMouseDrag()
+	}
 }
 
 function keyPressed() {
@@ -139,5 +182,10 @@ function keyPressed() {
 function windowResized() {
 	resizeCanvas(windowWidth, windowHeight);
 	panelWidth = width / 2
+	sv = createGraphics(panelWidth, height, WEBGL)
+	camSv = sv.createCamera()
+	camSv.ortho(-panelWidth / 2, panelWidth / 2, height / 2, -height / 2, -10000, 10000);
+	camSv.move(0, 150, 0)
+	camSv.lookAt(0, 0, 0)
 }
 
